@@ -55,5 +55,62 @@ def task6(url: str, save_dir_path: str):
         return
 
 
-task6('https://filesampleshub.com/download/document/txt/sample1.txt', 
-      r'C:\sem5\vpo\lab1\t5_dir')
+# task6('https://filesampleshub.com/download/document/txt/sample1.txt', 
+#       r'C:\sem5\vpo\lab1\t5_dir')
+
+import unittest
+from unittest.mock import patch, MagicMock
+
+class TestTask6(unittest.TestCase):
+    @patch('requests.get')
+    @patch('os.path.isdir')
+    @patch('builtins.print')
+    def test_task6_success(self, mock_print, mock_isdir, mock_get):
+        """Тестирует успешное скачивание и сохранение файла."""
+        mock_isdir.return_value = True
+        mock_get.return_value = MagicMock(status_code=200, iter_content=MagicMock(return_value=[b'content']))
+        
+        with patch('builtins.open', unittest.mock.mock_open()) as mock_open:
+            task6('https://example.com/file.txt', r'C:\sem5\vpo\lab1\t5_dir')
+            mock_open.assert_called_once_with(r'C:\sem5\vpo\lab1\t5_dir\file.txt', 'wb')
+            mock_print.assert_called_once_with("Файл успешно сохранён в: C:\\sem5\\vpo\\lab1\\t5_dir\\file.txt")
+
+    @patch('requests.get')
+    @patch('os.path.isdir')
+    @patch('builtins.print')
+    def test_task6_invalid_url(self, mock_print, mock_isdir, mock_get):
+        """Тестирует обработку некорректного URL."""
+        mock_isdir.return_value = True
+        task6('://example.com/file.txt', r'C:\sem5\vpo\lab1\t5_dir')
+        mock_print.assert_called_once_with("ОШИБКА. Некорректный URL.")
+    
+    @patch('requests.get')
+    @patch('os.path.isdir')
+    @patch('builtins.print')
+    def test_task6_non_existent_directory(self, mock_print, mock_isdir, mock_get):
+        """Тестирует обработку несуществующей директории."""
+        mock_isdir.return_value = False
+        task6('https://example.com/file.txt', '/non_existent_dir')
+        mock_print.assert_called_once_with("ОШИБКА. Указанная папка '/non_existent_dir' не существует.")
+    
+    @patch('requests.get')
+    @patch('os.path.isdir')
+    @patch('builtins.print')
+    def test_task6_no_file_name_in_url(self, mock_print, mock_isdir, mock_get):
+        """Тестирует URL без имени файла."""
+        mock_isdir.return_value = True
+        task6('https://example.com/', r'C:\sem5\vpo\lab1\t5_dir')
+        mock_print.assert_called_once_with("ОШИБКА. Невозможно извлечь имя файла из URL.")
+    
+    @patch('requests.get')
+    @patch('os.path.isdir')
+    @patch('builtins.print')
+    def test_task6_download_failure(self, mock_print, mock_isdir, mock_get):
+        """Тестирует обработку ошибки при загрузке файла."""
+        mock_isdir.return_value = True
+        mock_get.side_effect = requests.exceptions.RequestException
+        task6('https://example.com/file.txt', r'C:\sem5\vpo\lab1\t5_dir')
+        mock_print.assert_called_once_with("ОШИБКА. Не удалось скачать файл.")
+
+if __name__ == '__main__':
+    unittest.main()
